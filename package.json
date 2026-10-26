@@ -1,0 +1,35 @@
+{
+  "name": "cryptlnk",
+  "version": "1.0.0",
+  "description": "Completely serverless, zero-database, zero-login peer-to-peer ephemeral encrypted chat website powered by Web Crypto API (AES-256-GCM) and WebRTC DataChannels.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "schedule-publish": "powershell -ExecutionPolicy Bypass -File ./schedule-release.ps1"
+  },
+  "keywords": [
+    "webrtc",
+    "webcrypto",
+    "aes-gcm",
+    "zero-knowledge",
+    "serverless",
+    "p2p-chat",
+    "ephemeral",
+    "cybersecurity",
+    "pranav-aitha"
+  ],
+  "author": "Pranav Aitha (https://github.com/pranav-aitha)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pranav-aitha/CryptLnk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pranav-aitha/CryptLnk/issues"
+  },
+  "homepage": "https://pranav-aitha.github.io/CryptLnk",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
