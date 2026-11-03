@@ -182,7 +182,7 @@ CryptLnk is engineered to run seamlessly as a static web application on GitHub P
 4. Click **Save**. Within 60 seconds, your site will be live at:
    `https://<your-username>.github.io/CryptLnk/`
 
-> **Note on Signaling with GitHub Pages**: Static GitHub Pages serves the HTML/JS client. For WebRTC discovery, the frontend defaults to connecting to your local or hosted WebSocket relay, or you can use the built-in **Air-Gapped Manual SDP Handshake** for 100% serverless communication without any server!
+> **Note on Signaling with GitHub Pages**: CryptLnk incorporates a dual-mode signaling engine. When deployed on GitHub Pages, it connects to a zero-knowledge serverless cloud signaling broker (PeerJS) so any two browsers anywhere on the web can connect instantly without running a local server. When self-hosting or running locally with `npm start`, it can also route discovery through the included Node.js WebSocket server (`server.js`). Additionally, the built-in **Air-Gapped Manual SDP Handshake** provides 100% serverless P2P communication without any signaling broker!
 
 ---
 
@@ -199,8 +199,9 @@ CryptLnk rejects bloated single-page application frameworks (such as React, Angu
 | **URI Fragment Standard**| IETF RFC 3986 Section 3.5 | Guarantees that the `#room=...&key=...` cryptographic anchor is never transmitted over HTTP wire protocols to servers or CDNs. |
 | **HTML5 & Vanilla ECMAScript** | ES2022+ Standard | Native DOM manipulation, memory closure isolation, async/await concurrency, and event handling without third-party runtime weight. |
 | **Tailwind CSS** | v3.4 JIT Engine (CDN) | Modern utility-first CSS framework powering the responsive dark luxury aesthetic, glassmorphism filters, and CSS keyframe animations. |
+| **PeerJS Engine** | v1.5.4 (CDN) | Zero-configuration serverless WebRTC signaling provider enabling instant, friction-free peer discovery across static hosting like GitHub Pages. |
 | **WebSocket Protocol** | IETF RFC 6455 | Full-duplex ephemeral control channel for relaying initial WebRTC SDP offers, answers, and ICE candidate packets between peers. |
-| **Node.js `ws` Engine** | v8.18.0 | High-performance, lightweight WebSocket server implementation handling zero-storage ephemeral room handshakes. |
+| **Node.js `ws` Engine** | v8.18.0 | High-performance, lightweight WebSocket server implementation handling zero-storage ephemeral room handshakes for self-hosted instances. |
 | **Web Audio API** | W3C Standard | Real-time audio waveform synthesis (sine and sawtooth oscillators) providing feedback without external audio file requests. |
 | **HTML5 Canvas 2D API** | W3C Standard | Dynamic client-side matrix rasterization rendering offline scannable QR codes in real-time. |
 

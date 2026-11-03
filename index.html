@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CryptLnk — Serverless Zero-Knowledge Ephemeral P2P Chat</title>
-    <meta name="description" content="Completely serverless, zero-database, zero-login peer-to-peer encrypted chat tool powered by Web Crypto API (AES-256-GCM) and WebRTC DataChannels. Keys never leave your browser URL hash.">
+    <meta name="description" content="Completely serverless, zero-database, zero-login peer-to-peer encrypted chat website powered by Web Crypto API (AES-256-GCM) and WebRTC DataChannels. Keys never leave your browser URL hash.">
     <meta name="author" content="Pranav Aitha">
     
     <!-- OpenGraph & Social Cards -->
     <meta property="og:title" content="CryptLnk — Serverless Zero-Knowledge Ephemeral P2P Chat">
     <meta property="og:description" content="Ultra-secure, ephemeral, zero-knowledge P2P messaging. True end-to-end encryption in the browser URL hash.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pranav-aitha.github.io/CryptLnk/">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -61,12 +62,13 @@
         }
     </script>
 
-    <!-- Canvas Confetti & QR code via lightweight CDN with inline fallbacks -->
+    <!-- External Client Libraries (PeerJS for Serverless WebRTC, Confetti & QR code) -->
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 
     <style>
-        /* Custom Scrollbar for Chat Stream */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -81,18 +83,18 @@
             background: #334155;
         }
 
-        /* Glassmorphic Elements */
+        /* Glassmorphism Elements */
         .glass-panel {
-            background: rgba(15, 23, 42, 0.75);
+            background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .glass-bubble-peer {
-            background: rgba(30, 41, 59, 0.85);
+            background: rgba(30, 41, 59, 0.9);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .glass-bubble-me {
@@ -111,7 +113,7 @@
             40% { transform: scale(1); opacity: 1; }
         }
 
-        /* Floating Hearts on Footer Button */
+        /* Floating Hearts Animation for Footer */
         @keyframes floatHeart {
             0% {
                 transform: translateY(0) scale(0.8);
@@ -126,17 +128,17 @@
             position: absolute;
             pointer-events: none;
             animation: floatHeart 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             z-index: 50;
         }
 
-        /* Cute Button Glow & Pop */
+        /* Cute Social Buttons */
         .cute-social-btn {
             position: relative;
             transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .cute-social-btn:hover {
-            transform: translateY(-4px) scale(1.05);
+            transform: translateY(-3px) scale(1.05);
         }
         .cute-social-btn:active {
             transform: translateY(1px) scale(0.97);
@@ -162,9 +164,9 @@
             </div>
         </div>
 
-        <!-- Header Status Indicators & Actions -->
+        <!-- Header Actions -->
         <div class="flex items-center space-x-2 sm:space-x-3">
-            <!-- Audio Toggle -->
+            <!-- Audio Toggle Button -->
             <button id="btnAudioToggle" onclick="toggleAudio()" title="Sound Effects" class="w-9 h-9 rounded-lg border border-darkborder flex items-center justify-center text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 transition bg-slate-900/60">
                 <svg id="iconAudioOn" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
@@ -175,15 +177,15 @@
                 </svg>
             </button>
 
-            <!-- Signaling Settings Modal Toggle -->
-            <button onclick="toggleModal('modalSettings')" title="Signaling Configuration" class="w-9 h-9 rounded-lg border border-darkborder flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/40 transition bg-slate-900/60">
+            <!-- Mode / Signaling Settings -->
+            <button onclick="toggleModal('modalSettings')" title="Signaling & Connectivity" class="w-9 h-9 rounded-lg border border-darkborder flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/40 transition bg-slate-900/60">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
             </button>
 
-            <!-- Emergency Burn Room Button (Active session only) -->
+            <!-- Emergency Burn Room Button -->
             <button id="btnHeaderBurn" onclick="burnRoom()" class="hidden px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 hover:text-rose-200 text-xs font-semibold flex items-center space-x-1.5 transition">
                 <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
@@ -239,7 +241,7 @@
                 </div>
 
                 <div class="flex space-x-2">
-                    <input id="inputJoinUrl" type="text" placeholder="Paste CryptLnk URL with #key..." class="flex-1 bg-slate-900/80 border border-darkborder rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
+                    <input id="inputJoinUrl" type="text" placeholder="Paste CryptLnk URL with #room=...&key=..." class="flex-1 bg-slate-900/80 border border-darkborder rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
                     <button onclick="joinViaInputUrl()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-darkborder hover:border-slate-600 transition">
                         Connect
                     </button>
@@ -255,7 +257,7 @@
                         </svg>
                     </div>
                     <h3 class="text-sm font-bold text-slate-200 mb-1">URL Hash Security</h3>
-                    <p class="text-xs text-slate-400">Under RFC 3986, fragment identifiers (<code class="text-emerald-400">#...</code>) are client-side only. Servers never receive or log your cryptographic key.</p>
+                    <p class="text-xs text-slate-400">Under RFC 3986, fragment identifiers (<code class="text-emerald-400">#...</code>) are strictly client-side. Web servers never receive or log your cryptographic key.</p>
                 </div>
 
                 <div class="glass-panel p-5 rounded-2xl border border-darkborder">
@@ -296,22 +298,35 @@
                         </div>
                     </div>
                     <h3 class="text-xl font-bold text-slate-100 mt-4">Waiting for Peer to Connect...</h3>
-                    <p class="text-xs text-slate-400 mt-1 max-w-sm">Share this unique encrypted session link with your partner. Once opened, WebRTC establishes a direct tunnel.</p>
+                    <p id="labelWaitingSubtext" class="text-xs text-slate-400 mt-1 max-w-sm">
+                        Share this unique encrypted session link with your partner. Once opened, WebRTC establishes a direct tunnel.
+                    </p>
                 </div>
 
                 <!-- Shareable Link Box -->
                 <div class="space-y-2 text-left">
-                    <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                        <span>Encrypted Session URL</span>
+                    <div class="flex items-center justify-between">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            Encrypted Session URL
+                        </label>
                         <span class="text-emerald-400 text-[10px] font-mono">256-BIT KEY INCLUDED</span>
-                    </label>
+                    </div>
+                    
                     <div class="flex items-center space-x-2 bg-slate-900/90 border border-darkborder rounded-xl p-2 focus-within:border-emerald-500 transition">
                         <input id="inputShareLink" readonly type="text" value="" class="flex-1 bg-transparent text-xs text-emerald-300 font-mono px-2 outline-none select-all overflow-ellipsis">
-                        <button id="btnCopyLink" onclick="copySessionLink()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-lg transition flex items-center space-x-1.5 shadow-md shadow-emerald-500/20">
+                        <button id="btnCopyLink" onclick="copySessionLink()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-lg transition flex items-center space-x-1.5 shadow-md shadow-emerald-500/20 cursor-pointer">
                             <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                             </svg>
                             <span id="btnCopyText">Copy Link</span>
+                        </button>
+                    </div>
+
+                    <!-- Instant Test Link Button -->
+                    <div class="flex justify-between items-center pt-1 text-[11px]">
+                        <span class="text-slate-500">Want to test right now?</span>
+                        <button onclick="openTestPeerTab()" class="text-cyan-400 hover:text-cyan-300 font-semibold underline transition">
+                            Open 2nd Peer Tab (Test Locally) &rarr;
                         </button>
                     </div>
                 </div>
@@ -344,6 +359,51 @@
                     <span class="text-slate-600">•</span>
                     <button onclick="toggleModal('modalManualSdp')" class="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition">
                         Manual Air-Gapped SDP Handshake
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2.5: CONNECTING / JOINING SCREEN      -->
+        <!-- ========================================== -->
+        <section id="viewJoining" class="hidden w-full max-w-md flex flex-col items-center py-10 text-center">
+            <div class="w-full glass-panel p-8 rounded-3xl border border-darkborder shadow-2xl space-y-6">
+                <div class="relative flex items-center justify-center">
+                    <div class="w-16 h-16 rounded-full bg-cyan-500/20 border border-cyan-500/40 animate-ping absolute"></div>
+                    <div class="w-16 h-16 rounded-full bg-cyan-500/30 border border-cyan-400 flex items-center justify-center z-10">
+                        <svg class="w-8 h-8 text-cyan-400 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6.364 1.636l-.707.707M20 12h-1M18.364 17.636l-.707-.707M12 19v1M5.636 17.636l.707-.707M4 12h1M5.636 6.364l.707.707"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-slate-100">Connecting to Session...</h3>
+                    <p class="text-xs text-slate-400 mt-1">Negotiating encrypted WebRTC P2P DataChannel with host</p>
+                </div>
+
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-darkborder space-y-1 text-left text-xs font-mono">
+                    <div class="flex justify-between text-slate-400">
+                        <span>Room ID:</span>
+                        <span id="labelJoiningRoom" class="text-cyan-300 font-bold">...</span>
+                    </div>
+                    <div class="flex justify-between text-slate-400">
+                        <span>Key Status:</span>
+                        <span class="text-emerald-400 font-bold">✓ AES-256-GCM Loaded</span>
+                    </div>
+                    <div class="flex justify-between text-slate-400">
+                        <span>Fingerprint:</span>
+                        <span id="labelJoiningFingerprint" class="text-emerald-400 text-[10px]">...</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-center space-x-3 pt-2">
+                    <button onclick="retryJoin()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-darkborder transition">
+                        Retry Handshake
+                    </button>
+                    <button onclick="resetToLobby()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
+                        Cancel
                     </button>
                 </div>
             </div>
@@ -391,7 +451,7 @@
                     </div>
 
                     <!-- Burn Button -->
-                    <button onclick="burnRoom()" title="Destroy session & wipe RAM" class="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 text-xs font-bold transition flex items-center space-x-1">
+                    <button onclick="burnRoom()" title="Destroy session & wipe RAM" class="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 text-xs font-bold transition flex items-center space-x-1 cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                         </svg>
@@ -445,22 +505,31 @@
                     <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                     </svg>
-                    <span>Signaling Server Configuration</span>
+                    <span>Signaling & Connectivity</span>
                 </h3>
-                <button onclick="toggleModal('modalSettings')" class="text-slate-400 hover:text-slate-200">
+                <button onclick="toggleModal('modalSettings')" class="text-slate-400 hover:text-slate-200 cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
             <p class="text-xs text-slate-400 leading-relaxed">
-                Signaling is used strictly for the two peers to discover each other and exchange WebRTC connection descriptors (SDP & ICE). After connection, this server is never contacted again.
+                CryptLnk features a dual-engine architecture: serverless cloud signaling for GitHub Pages, and a local WebSocket server (<code class="text-cyan-400">server.js</code>) for local / self-hosted node deployments.
             </p>
-            <div class="space-y-2 text-left">
-                <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">WebSocket Signaling URL</label>
-                <input id="inputSignalingUrl" type="text" class="w-full bg-slate-900 border border-darkborder rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 transition">
+            <div class="space-y-3 text-left">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">Active Signaling Mode</label>
+                    <select id="selectSignalingMode" class="w-full bg-slate-900 border border-darkborder rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 transition">
+                        <option value="cloud">🌐 Cloud Serverless Relay (Auto - GitHub Pages Compatible)</option>
+                        <option value="local">💻 Local Node Server (ws://localhost:3000)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">Custom WebSocket Server URL</label>
+                    <input id="inputSignalingUrl" type="text" placeholder="ws://localhost:3000" class="w-full bg-slate-900 border border-darkborder rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 transition">
+                </div>
             </div>
             <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="resetSignalingDefault()" class="px-3.5 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition">Reset Default</button>
-                <button onclick="saveSignalingSettings()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold rounded-xl transition">Save & Reconnect</button>
+                <button onclick="toggleModal('modalSettings')" class="px-3.5 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition">Close</button>
+                <button onclick="saveSignalingSettings()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold rounded-xl transition cursor-pointer">Save & Apply</button>
             </div>
         </div>
     </div>
@@ -475,9 +544,9 @@
                     <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                     </svg>
-                    <span>100% Serverless Manual SDP Exchange</span>
+                    <span>100% Serverless Air-Gapped SDP Handshake</span>
                 </h3>
-                <button onclick="toggleModal('modalManualSdp')" class="text-slate-400 hover:text-slate-200">
+                <button onclick="toggleModal('modalManualSdp')" class="text-slate-400 hover:text-slate-200 cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -488,7 +557,7 @@
                 <div>
                     <label class="text-[11px] font-bold text-slate-400 uppercase">1. Your SDP Offer / Answer</label>
                     <textarea id="textareaLocalSdp" readonly rows="3" class="w-full bg-slate-900 border border-darkborder rounded-xl p-2.5 text-[11px] text-emerald-400 font-mono focus:outline-none select-all"></textarea>
-                    <button onclick="copyLocalSdp()" class="mt-1 text-[11px] text-emerald-400 hover:underline font-semibold">Copy Local SDP</button>
+                    <button onclick="copyLocalSdp()" class="mt-1 text-[11px] text-emerald-400 hover:underline font-semibold cursor-pointer">Copy Local SDP</button>
                 </div>
                 <div>
                     <label class="text-[11px] font-bold text-slate-400 uppercase">2. Paste Remote SDP</label>
@@ -496,7 +565,7 @@
                 </div>
             </div>
             <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="applyRemoteSdp()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold rounded-xl transition">Connect via Manual SDP</button>
+                <button onclick="applyRemoteSdp()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold rounded-xl transition cursor-pointer">Connect via Manual SDP</button>
             </div>
         </div>
     </div>
@@ -564,16 +633,21 @@
             cryptoKey: null,      // CryptoKey object (AES-GCM 256)
             rawKeyB64: null,      // Base64URL string of raw key
             isInitiator: false,   // True if created room and offers SDP
-            ws: null,             // WebSocket connection to signaling relay
-            pc: null,             // RTCPeerConnection
-            dc: null,             // RTCDataChannel
+            peer: null,           // PeerJS instance for serverless cloud signaling
+            conn: null,           // Active DataConnection
+            ws: null,             // WebSocket connection to local/custom signaling relay
+            pc: null,             // Native RTCPeerConnection (fallback / manual)
+            dc: null,             // Native RTCDataChannel (fallback / manual)
             soundEnabled: true,
             latencyInterval: null,
             typingTimeout: null,
-            activeMessages: new Map() // msgId -> DOM element (for burn timers)
+            signalingMode: 'cloud' // 'cloud' (PeerJS / GitHub Pages) or 'local' (Node ws)
         };
 
-        // WebRTC Configuration using Google's public STUN servers
+        const PRODUCTION_URL = 'https://pranav-aitha.github.io/CryptLnk/';
+        let customSignalingUrl = 'ws://localhost:3000';
+
+        // Public STUN server configuration
         const RTC_CONFIG = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -584,20 +658,7 @@
             ]
         };
 
-        // Automatic signaling discovery based on deployment environment
-        function getAutoSignalingUrl() {
-            const loc = window.location;
-            if (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1') {
-                return `ws://${loc.hostname}:${loc.port || '3000'}`;
-            }
-            // For GitHub Pages or static host fallback:
-            // Allows connecting to a local relay or a fallback websocket relay
-            return `ws://localhost:3000`;
-        }
-
-        let customSignalingUrl = getAutoSignalingUrl();
-
-        // Audio Context Synthesizer (Zero asset dependencies)
+        // Web Audio Synthesizer (Zero sound assets needed)
         let audioCtx = null;
         function playChime(type) {
             if (!AppState.soundEnabled) return;
@@ -630,16 +691,14 @@
                     osc.stop(now + 0.15);
                 } else if (type === 'burn') {
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.setValueAtTime(320, now);
                     osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
                     gain.gain.setValueAtTime(0.15, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
                     osc.start(now);
                     osc.stop(now + 0.25);
                 }
-            } catch (e) {
-                // Ignore audio failures
-            }
+            } catch (e) {}
         }
 
         function toggleAudio() {
@@ -650,10 +709,9 @@
         }
 
         // ====================================================================
-        // CRYPTOGRAPHIC SUB-ROUTINES (Web Crypto API AES-256-GCM)
+        // CRYPTOGRAPHIC ENGINE (Web Crypto API AES-256-GCM)
         // ====================================================================
 
-        /** Convert ArrayBuffer to Base64URL string */
         function bufferToBase64Url(buffer) {
             const bytes = new Uint8Array(buffer);
             let binary = '';
@@ -663,7 +721,6 @@
             return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
         }
 
-        /** Convert Base64URL string to ArrayBuffer */
         function base64UrlToBuffer(base64url) {
             let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
             while (base64.length % 4) {
@@ -677,22 +734,19 @@
             return bytes.buffer;
         }
 
-        /** Generate a cryptographically random 256-bit AES-GCM Key */
         async function generateCryptoKey() {
             return await window.crypto.subtle.generateKey(
                 { name: "AES-GCM", length: 256 },
-                true, // exportable for peer link
+                true,
                 ["encrypt", "decrypt"]
             );
         }
 
-        /** Export CryptoKey to raw Base64URL */
         async function exportKeyToBase64(key) {
             const raw = await window.crypto.subtle.exportKey("raw", key);
             return bufferToBase64Url(raw);
         }
 
-        /** Import raw Base64URL string to CryptoKey */
         async function importKeyFromBase64(b64) {
             const buffer = base64UrlToBuffer(b64);
             return await window.crypto.subtle.importKey(
@@ -704,23 +758,16 @@
             );
         }
 
-        /** Derive safety fingerprint representation from SHA-256 of key */
         async function computeFingerprint(rawB64) {
             const buffer = base64UrlToBuffer(rawB64);
             const hashBuffer = await window.crypto.subtle.digest("SHA-256", buffer);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             const hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-            // Return formatted visual safety numbers: 4 blocks of 4 hex chars
             return `${hex.slice(0, 4)} • ${hex.slice(4, 8)} • ${hex.slice(8, 12)} • ${hex.slice(12, 16)}`;
         }
 
-        /**
-         * Encrypt an arbitrary JavaScript object using AES-256-GCM.
-         * Generates a fresh, non-repeating 12-byte (96-bit) cryptographically
-         * random Initialization Vector (IV) for every single message.
-         */
         async function encryptPayload(key, objectData) {
-            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+            const iv = window.crypto.getRandomValues(new Uint8Array(12)); // 96-bit unique IV
             const encoder = new TextEncoder();
             const encoded = encoder.encode(JSON.stringify(objectData));
 
@@ -736,10 +783,6 @@
             };
         }
 
-        /**
-         * Decrypt an encrypted packet using AES-256-GCM.
-         * Throws error if ciphertext was altered or IV is mismatched (integrity check).
-         */
         async function decryptPayload(key, packet) {
             const iv = base64UrlToBuffer(packet.iv);
             const ciphertext = base64UrlToBuffer(packet.data);
@@ -755,75 +798,119 @@
         }
 
         // ====================================================================
-        // SESSION & KEY MANAGEMENT IN URL HASH (#room=...&key=...)
+        // PROPER URL & HASH PARSER (Resilient RFC 3986)
         // ====================================================================
 
-        /** Read room ID and cryptographic key strictly from URL hash */
-        function parseUrlHash() {
-            const hash = window.location.hash.substring(1);
-            if (!hash) return null;
-            const params = new URLSearchParams(hash);
-            const room = params.get('room');
-            const key = params.get('key');
-            if (room && key) {
-                return { room, key };
+        function getBaseUrl() {
+            if (window.location.protocol === 'file:') {
+                // If tested from file:///, generate the real shareable GitHub Pages URL
+                return PRODUCTION_URL;
             }
+            return window.location.origin + window.location.pathname;
+        }
+
+        function parseUrlHash() {
+            const rawHash = window.location.hash.replace(/^#/, '').trim();
+            if (!rawHash) return null;
+
+            // Strategy 1: URLSearchParams (#room=...&key=...)
+            if (rawHash.includes('=') || rawHash.includes('&')) {
+                const params = new URLSearchParams(rawHash);
+                const room = params.get('room');
+                const key = params.get('key');
+                if (room && key) return { room, key };
+                if (key) return { room: key.slice(0, 12), key };
+            }
+
+            // Strategy 2: Colon delimited (#room:key)
+            if (rawHash.includes(':')) {
+                const parts = rawHash.split(':');
+                if (parts.length >= 2) return { room: parts[0], key: parts[1] };
+            }
+
+            // Strategy 3: Raw key only (#<rawKey>)
+            if (rawHash.length > 20) {
+                return { room: rawHash.slice(0, 12), key: rawHash };
+            }
+
             return null;
         }
 
-        /** Update browser hash without page reload or server transmission */
-        function setUrlHash(roomId, keyB64) {
-            window.location.hash = `room=${encodeURIComponent(roomId)}&key=${encodeURIComponent(keyB64)}`;
+        function generateRoomId() {
+            const bytes = window.crypto.getRandomValues(new Uint8Array(6));
+            return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        /** Generate a fresh random room ID */
-        function generateRoomId() {
-            const bytes = window.crypto.getRandomValues(new Uint8Array(9));
-            return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        function constructShareUrl(roomId, keyB64) {
+            const base = getBaseUrl();
+            const cleanBase = base.endsWith('/') ? base : base + '/';
+            return `${cleanBase}#room=${encodeURIComponent(roomId)}&key=${encodeURIComponent(keyB64)}`;
         }
 
         // ====================================================================
         // INITIALIZATION & ROUTING
         // ====================================================================
+
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('inputSignalingUrl').value = customSignalingUrl;
 
-            // Check if user arrived via an encrypted session URL
+            // Automatically detect if running under local node server
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                AppState.signalingMode = 'local';
+                document.getElementById('selectSignalingMode').value = 'local';
+            } else {
+                AppState.signalingMode = 'cloud';
+                document.getElementById('selectSignalingMode').value = 'cloud';
+            }
+
+            // Parse incoming URL hash for room joining
+            checkAndHandleIncomingSession();
+        });
+
+        // Listen for hash changes if user pastes a new URL without refreshing
+        window.addEventListener('hashchange', () => {
+            checkAndHandleIncomingSession();
+        });
+
+        async function checkAndHandleIncomingSession() {
             const session = parseUrlHash();
-            if (session) {
+            if (session && session.room && session.key) {
                 try {
                     AppState.roomId = session.room;
                     AppState.rawKeyB64 = session.key;
                     AppState.cryptoKey = await importKeyFromBase64(session.key);
                     AppState.isInitiator = false;
 
-                    switchView('waiting');
-                    document.getElementById('inputShareLink').value = window.location.href;
-                    renderQrCode(window.location.href);
+                    // Switch to joining screen
+                    switchView('joining');
+                    document.getElementById('labelJoiningRoom').textContent = session.room;
 
                     const fp = await computeFingerprint(AppState.rawKeyB64);
-                    document.getElementById('labelFingerprint').textContent = fp;
+                    document.getElementById('labelJoiningFingerprint').textContent = fp;
 
                     connectSignaling();
                 } catch (err) {
-                    console.error("Failed to parse cryptographic session from hash:", err);
+                    console.error("Failed to load key from URL hash:", err);
                     showToast('⚠️ Invalid encryption key in URL');
                     resetToLobby();
                 }
-            } else {
+            } else if (!AppState.roomId) {
                 switchView('lobby');
             }
-        });
+        }
 
-        /** Switch between UI panels */
         function switchView(viewName) {
             document.getElementById('viewLobby').classList.toggle('hidden', viewName !== 'lobby');
             document.getElementById('viewWaiting').classList.toggle('hidden', viewName !== 'waiting');
+            document.getElementById('viewJoining').classList.toggle('hidden', viewName !== 'joining');
             document.getElementById('viewChat').classList.toggle('hidden', viewName !== 'chat');
             document.getElementById('btnHeaderBurn').classList.toggle('hidden', viewName !== 'chat');
         }
 
-        /** User clicks "Generate Secure Link" */
+        // ====================================================================
+        // GENERATE SECURE LINK (HOST INITIATOR)
+        // ====================================================================
+
         async function generateNewSession() {
             try {
                 AppState.roomId = generateRoomId();
@@ -831,9 +918,11 @@
                 AppState.rawKeyB64 = await exportKeyToBase64(AppState.cryptoKey);
                 AppState.isInitiator = true;
 
-                setUrlHash(AppState.roomId, AppState.rawKeyB64);
+                // Update browser address bar without reload
+                window.location.hash = `room=${encodeURIComponent(AppState.roomId)}&key=${encodeURIComponent(AppState.rawKeyB64)}`;
 
-                const shareUrl = window.location.href;
+                // Generate full shareable URL
+                const shareUrl = constructShareUrl(AppState.roomId, AppState.rawKeyB64);
                 document.getElementById('inputShareLink').value = shareUrl;
                 renderQrCode(shareUrl);
 
@@ -842,55 +931,126 @@
 
                 switchView('waiting');
                 connectSignaling();
-                showToast('🔑 Cryptographic Session Generated!');
+                showToast('🔑 Cryptographic Session Link Generated!');
             } catch (err) {
                 console.error("Session generation error:", err);
                 showToast('Failed to generate cryptographic key');
             }
         }
 
-        /** User manually pastes a URL in the Lobby */
         function joinViaInputUrl() {
             const rawUrl = document.getElementById('inputJoinUrl').value.trim();
             if (!rawUrl) return;
 
             try {
-                const url = new URL(rawUrl);
-                const hashParams = new URLSearchParams(url.hash.substring(1));
-                const room = hashParams.get('room');
-                const key = hashParams.get('key');
-
-                if (room && key) {
-                    window.location.href = rawUrl;
-                    window.location.reload();
-                } else {
-                    showToast('Invalid CryptLnk URL format');
+                let hashPart = rawUrl;
+                if (rawUrl.includes('#')) {
+                    hashPart = rawUrl.substring(rawUrl.indexOf('#') + 1);
                 }
+                window.location.hash = hashPart;
             } catch {
                 showToast('Invalid URL entered');
             }
         }
 
+        function openTestPeerTab() {
+            const shareUrl = document.getElementById('inputShareLink').value;
+            if (shareUrl) {
+                window.open(shareUrl, '_blank');
+                showToast('🚀 Opened 2nd peer tab for instant testing!');
+            }
+        }
+
         // ====================================================================
-        // SIGNALING RELAY & WEBRTC CONNECTION LIFECYCLE
+        // SERVERLESS & HYBRID WEBRTC SIGNALING
         // ====================================================================
 
         function connectSignaling() {
-            if (AppState.ws) {
-                try { AppState.ws.close(); } catch(e) {}
+            cleanupSignaling();
+
+            if (AppState.signalingMode === 'local') {
+                connectLocalWebSocket();
+            } else {
+                connectPeerJsRelay();
+            }
+        }
+
+        /** Serverless PeerJS Cloud Relay (Default on GitHub Pages & Static Hosts) */
+        function connectPeerJsRelay() {
+            if (typeof Peer === 'undefined') {
+                console.warn("PeerJS library not loaded, falling back to local websocket");
+                connectLocalWebSocket();
+                return;
             }
 
+            const prefix = 'cryptlnk-v1-';
+            const hostPeerId = `${prefix}${AppState.roomId}-host`;
+
+            if (AppState.isInitiator) {
+                // Room creator hosts the peer ID
+                console.log("[PeerJS] Hosting session ID:", hostPeerId);
+                AppState.peer = new Peer(hostPeerId, {
+                    config: RTC_CONFIG,
+                    debug: 1
+                });
+
+                AppState.peer.on('open', (id) => {
+                    console.log("[PeerJS] Peer open as host:", id);
+                });
+
+                AppState.peer.on('connection', (conn) => {
+                    console.log("[PeerJS] Peer connected to host!");
+                    AppState.conn = conn;
+                    setupDataConnection(conn);
+                });
+
+                AppState.peer.on('error', (err) => {
+                    console.warn("[PeerJS] Host error:", err);
+                    if (err.type === 'unavailable-id') {
+                        // ID already in use: regenerate room ID
+                        showToast('Room ID collision. Regenerating key...');
+                        generateNewSession();
+                    }
+                });
+            } else {
+                // Joiner connects to host
+                const joinerPeerId = `${prefix}${AppState.roomId}-peer-${Math.random().toString(36).substring(2, 7)}`;
+                console.log("[PeerJS] Connecting as joiner:", joinerPeerId, "->", hostPeerId);
+                
+                AppState.peer = new Peer(joinerPeerId, {
+                    config: RTC_CONFIG,
+                    debug: 1
+                });
+
+                AppState.peer.on('open', () => {
+                    const conn = AppState.peer.connect(hostPeerId, { reliable: true });
+                    AppState.conn = conn;
+                    setupDataConnection(conn);
+                });
+
+                AppState.peer.on('error', (err) => {
+                    console.warn("[PeerJS] Joiner error:", err);
+                    if (err.type === 'peer-unavailable') {
+                        showToast('Host peer is not online yet. Keep link open!');
+                    }
+                });
+            }
+        }
+
+        /** Local / Self-Hosted Node.js WebSocket Relay (from server.js) */
+        function connectLocalWebSocket() {
             try {
                 AppState.ws = new WebSocket(customSignalingUrl);
             } catch (err) {
-                console.warn("Signaling server connection failed:", err);
-                showToast('Signaling offline. Use manual SDP or configure server.');
+                console.warn("[LocalWS] WebSocket connection failed:", err);
+                // Fallback to cloud relay automatically
+                AppState.signalingMode = 'cloud';
+                connectPeerJsRelay();
                 return;
             }
 
             AppState.ws.onopen = () => {
-                console.log("[Signaling] Connected to relay:", customSignalingUrl);
-                // Join session room
+                console.log("[LocalWS] Connected to signaling relay:", customSignalingUrl);
                 AppState.ws.send(JSON.stringify({
                     type: 'join',
                     roomId: AppState.roomId
@@ -899,60 +1059,85 @@
 
             AppState.ws.onmessage = async (event) => {
                 let msg;
-                try {
-                    msg = JSON.parse(event.data);
-                } catch { return; }
+                try { msg = JSON.parse(event.data); } catch { return; }
 
                 switch (msg.type) {
-                    case 'waiting':
-                        console.log("[Signaling]", msg.message);
-                        break;
-
                     case 'peer-joined':
-                        console.log("[Signaling]", msg.message);
-                        initPeerConnection(msg.isInitiator);
+                        initNativePeerConnection(msg.isInitiator);
                         break;
-
                     case 'signal':
-                        handleRemoteSignal(msg.payload);
+                        handleNativeRemoteSignal(msg.payload);
                         break;
-
-                    case 'room-full':
-                        showToast('❌ Room is already occupied by two peers.');
-                        resetToLobby();
-                        break;
-
                     case 'peer-disconnected':
-                        showToast('⚠️ Peer disconnected. Session terminated.');
+                        showToast('⚠️ Peer disconnected.');
                         appendSystemMessage('Peer disconnected. Connection closed.');
-                        break;
-
-                    case 'error':
-                        showToast(`Server Error: ${msg.message}`);
                         break;
                 }
             };
 
-            AppState.ws.onerror = (err) => {
-                console.warn("[Signaling] WebSocket error:", err);
-            };
-
-            AppState.ws.onclose = () => {
-                console.log("[Signaling] WebSocket closed.");
+            AppState.ws.onerror = () => {
+                // If local WebSocket is not running, seamlessly fallback to serverless cloud relay
+                if (AppState.signalingMode === 'local') {
+                    console.log("[LocalWS] Server unreachable, automatically using Cloud Serverless Relay.");
+                    AppState.signalingMode = 'cloud';
+                    connectPeerJsRelay();
+                }
             };
         }
 
-        /** Initialize WebRTC Peer Connection */
-        function initPeerConnection(isInitiator) {
-            AppState.isInitiator = isInitiator;
+        /** Data Connection Setup (Unified for PeerJS & WebRTC) */
+        function setupDataConnection(conn) {
+            conn.on('open', () => {
+                console.log("[P2P] WebRTC DataChannel Opened! End-to-end encryption ready.");
+                switchView('chat');
+                playChime('receive');
+                showConfetti();
+                showToast('🛡️ Direct WebRTC Channel Secured with AES-256-GCM!');
+                startLatencyPings();
 
+                setTimeout(() => {
+                    document.getElementById('inputMessage').focus();
+                }, 300);
+            });
+
+            conn.on('data', async (raw) => {
+                try {
+                    const packet = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                    const message = await decryptPayload(AppState.cryptoKey, packet);
+                    handleReceivedP2PMessage(message);
+                } catch (err) {
+                    console.error("Message decryption error:", err);
+                    appendSystemMessage('⚠️ Received corrupted or unauthenticated message.');
+                }
+            });
+
+            conn.on('close', () => {
+                appendSystemMessage('Peer closed connection.');
+                stopLatencyPings();
+            });
+
+            conn.on('error', (err) => {
+                console.error("[P2P] Channel error:", err);
+            });
+        }
+
+        function retryJoin() {
+            showToast('Retrying handshake...');
+            connectSignaling();
+        }
+
+        // ====================================================================
+        // NATIVE WEBRTC FALLBACK (For Local WebSocket Relay)
+        // ====================================================================
+
+        function initNativePeerConnection(isInitiator) {
+            AppState.isInitiator = isInitiator;
             if (AppState.pc) {
                 try { AppState.pc.close(); } catch(e) {}
             }
 
             AppState.pc = new RTCPeerConnection(RTC_CONFIG);
 
-            // Forward ICE candidates to peer via signaling server
             AppState.pc.onicecandidate = (event) => {
                 if (event.candidate && AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
                     AppState.ws.send(JSON.stringify({
@@ -960,26 +1145,15 @@
                         payload: { candidate: event.candidate }
                     }));
                 }
-                // Update local SDP text for manual airgapped handshake option
                 if (AppState.pc.localDescription) {
                     document.getElementById('textareaLocalSdp').value = JSON.stringify(AppState.pc.localDescription);
                 }
             };
 
-            // Monitor ICE connection state
-            AppState.pc.oniceconnectionstatechange = () => {
-                console.log("[WebRTC] ICE State:", AppState.pc.iceConnectionState);
-                if (AppState.pc.iceConnectionState === 'disconnected' || AppState.pc.iceConnectionState === 'failed') {
-                    appendSystemMessage('Peer-to-peer connection interrupted.');
-                }
-            };
-
             if (isInitiator) {
-                // Host creates RTCDataChannel
                 AppState.dc = AppState.pc.createDataChannel('cryptlnk-p2p', { ordered: true });
-                setupDataChannel(AppState.dc);
+                setupNativeDataChannel(AppState.dc);
 
-                // Create and send SDP Offer
                 AppState.pc.createOffer().then((offer) => {
                     return AppState.pc.setLocalDescription(offer);
                 }).then(() => {
@@ -990,31 +1164,48 @@
                         }));
                     }
                     document.getElementById('textareaLocalSdp').value = JSON.stringify(AppState.pc.localDescription);
-                }).catch((err) => console.error("Create offer error:", err));
+                });
             } else {
-                // Receiver listens for DataChannel
                 AppState.pc.ondatachannel = (event) => {
                     AppState.dc = event.channel;
-                    setupDataChannel(AppState.dc);
+                    setupNativeDataChannel(AppState.dc);
                 };
             }
         }
 
-        /** Process incoming SDP and ICE signals */
-        async function handleRemoteSignal(payload) {
-            if (!AppState.pc) {
-                initPeerConnection(false);
-            }
+        function setupNativeDataChannel(channel) {
+            channel.onopen = () => {
+                switchView('chat');
+                playChime('receive');
+                showConfetti();
+                showToast('🛡️ Direct WebRTC Channel Secured with AES-256-GCM!');
+                startLatencyPings();
+            };
+
+            channel.onmessage = async (event) => {
+                try {
+                    const packet = JSON.parse(event.data);
+                    const message = await decryptPayload(AppState.cryptoKey, packet);
+                    handleReceivedP2PMessage(message);
+                } catch (err) {
+                    appendSystemMessage('⚠️ Decryption error.');
+                }
+            };
+
+            channel.onclose = () => {
+                appendSystemMessage('DataChannel closed.');
+                stopLatencyPings();
+            };
+        }
+
+        async function handleNativeRemoteSignal(payload) {
+            if (!AppState.pc) initNativePeerConnection(false);
 
             if (payload.sdp) {
-                const sdp = new RTCSessionDescription(payload.sdp);
-                await AppState.pc.setRemoteDescription(sdp);
-
-                if (sdp.type === 'offer') {
-                    // Create and send SDP Answer
+                await AppState.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+                if (payload.sdp.type === 'offer') {
                     const answer = await AppState.pc.createAnswer();
                     await AppState.pc.setLocalDescription(answer);
-
                     if (AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
                         AppState.ws.send(JSON.stringify({
                             type: 'signal',
@@ -1026,63 +1217,33 @@
             } else if (payload.candidate) {
                 try {
                     await AppState.pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
-                } catch (e) {
-                    console.error("Error adding received ICE candidate:", e);
-                }
+                } catch(e) {}
             }
-        }
-
-        /** Configure RTCDataChannel Event Listeners */
-        function setupDataChannel(channel) {
-            channel.onopen = () => {
-                console.log("[DataChannel] Channel Opened! Ready for end-to-end encrypted chat.");
-                switchView('chat');
-                playChime('receive');
-                showConfetti();
-                showToast('🛡️ P2P Channel Secured with AES-256-GCM!');
-
-                // Start latency ping loop
-                startLatencyPings();
-
-                // Focus message input
-                setTimeout(() => {
-                    document.getElementById('inputMessage').focus();
-                }, 300);
-            };
-
-            channel.onmessage = async (event) => {
-                try {
-                    const rawPacket = JSON.parse(event.data);
-                    // Decrypt packet using in-memory WebCrypto AES key
-                    const message = await decryptPayload(AppState.cryptoKey, rawPacket);
-                    handleReceivedP2PMessage(message);
-                } catch (err) {
-                    console.error("Message decryption error (tampering/bad key):", err);
-                    appendSystemMessage('⚠️ Received corrupted or unauthenticated message packet.');
-                }
-            };
-
-            channel.onclose = () => {
-                console.log("[DataChannel] Channel closed.");
-                appendSystemMessage('P2P DataChannel closed by peer.');
-                stopLatencyPings();
-            };
-
-            channel.onerror = (err) => {
-                console.error("[DataChannel] Error:", err);
-            };
         }
 
         // ====================================================================
         // ENCRYPTED P2P MESSAGING & CONTROL PROTOCOL
         // ====================================================================
 
-        /** Dispatch encrypted chat message over RTCDataChannel */
+        function isChannelOpen() {
+            if (AppState.conn && AppState.conn.open) return true;
+            if (AppState.dc && AppState.dc.readyState === 'open') return true;
+            return false;
+        }
+
+        function sendP2PRaw(packet) {
+            if (AppState.conn && AppState.conn.open) {
+                AppState.conn.send(packet);
+            } else if (AppState.dc && AppState.dc.readyState === 'open') {
+                AppState.dc.send(JSON.stringify(packet));
+            }
+        }
+
         async function handleSendMessage(e) {
             e.preventDefault();
             const input = document.getElementById('inputMessage');
             const text = input.value.trim();
-            if (!text || !AppState.dc || AppState.dc.readyState !== 'open') return;
+            if (!text || !isChannelOpen()) return;
 
             const timerSec = parseInt(document.getElementById('selectBurnTimer').value, 10) || 0;
             const msgId = 'msg_' + Math.random().toString(36).substring(2, 10);
@@ -1097,11 +1258,9 @@
             };
 
             try {
-                // Encrypt with fresh random 12-byte IV
                 const encryptedPacket = await encryptPayload(AppState.cryptoKey, messageObj);
-                AppState.dc.send(JSON.stringify(encryptedPacket));
+                sendP2PRaw(encryptedPacket);
 
-                // Render outgoing bubble in UI
                 renderChatMessage({
                     id: msgId,
                     isMe: true,
@@ -1113,16 +1272,13 @@
 
                 playChime('send');
                 input.value = '';
-
-                // Notify peer typing stopped
                 sendTypingSignal(false);
             } catch (err) {
-                console.error("Failed to encrypt and send message:", err);
+                console.error("Encryption send failure:", err);
                 showToast('Encryption failed');
             }
         }
 
-        /** Handle parsed message received over DataChannel */
         function handleReceivedP2PMessage(msg) {
             switch (msg.type) {
                 case 'chat': {
@@ -1135,14 +1291,11 @@
                         timer: msg.timer
                     });
                     playChime('receive');
-
-                    // Send encrypted delivery confirmation ACK back
                     sendAck(msg.id);
                     break;
                 }
 
                 case 'ack': {
-                    // Update outgoing message checkmark from "Sent" to "Delivered"
                     updateMessageStatus(msg.id, 'delivered');
                     break;
                 }
@@ -1160,7 +1313,6 @@
                 }
 
                 case 'ping': {
-                    // Reply to latency ping
                     sendPong(msg.time);
                     break;
                 }
@@ -1178,16 +1330,15 @@
             }
         }
 
-        /** Send encrypted delivery ACK */
         async function sendAck(msgId) {
-            if (!AppState.dc || AppState.dc.readyState !== 'open') return;
+            if (!isChannelOpen()) return;
             try {
                 const packet = await encryptPayload(AppState.cryptoKey, { type: 'ack', id: msgId });
-                AppState.dc.send(JSON.stringify(packet));
+                sendP2PRaw(packet);
             } catch(e) {}
         }
 
-        /** Typing listener on input */
+        // Typing Listener
         document.getElementById('inputMessage').addEventListener('input', () => {
             sendTypingSignal(true);
             clearTimeout(AppState.typingTimeout);
@@ -1197,24 +1348,23 @@
         });
 
         async function sendTypingSignal(isTyping) {
-            if (!AppState.dc || AppState.dc.readyState !== 'open') return;
+            if (!isChannelOpen()) return;
             try {
                 const packet = await encryptPayload(AppState.cryptoKey, { type: 'typing', isTyping });
-                AppState.dc.send(JSON.stringify(packet));
+                sendP2PRaw(packet);
             } catch(e) {}
         }
 
-        /** Latency measurement loop */
         function startLatencyPings() {
             stopLatencyPings();
             AppState.latencyInterval = setInterval(async () => {
-                if (AppState.dc && AppState.dc.readyState === 'open') {
+                if (isChannelOpen()) {
                     try {
                         const packet = await encryptPayload(AppState.cryptoKey, { type: 'ping', time: Date.now() });
-                        AppState.dc.send(JSON.stringify(packet));
+                        sendP2PRaw(packet);
                     } catch(e) {}
                 }
-            }, 5000);
+            }, 6000);
         }
 
         function stopLatencyPings() {
@@ -1225,15 +1375,15 @@
         }
 
         async function sendPong(pingTime) {
-            if (!AppState.dc || AppState.dc.readyState !== 'open') return;
+            if (!isChannelOpen()) return;
             try {
                 const packet = await encryptPayload(AppState.cryptoKey, { type: 'pong', time: pingTime });
-                AppState.dc.send(JSON.stringify(packet));
+                sendP2PRaw(packet);
             } catch(e) {}
         }
 
         // ====================================================================
-        // CHAT UI RENDERING & EPHEMERAL TIMERS
+        // CHAT UI RENDERING & TIMERS
         // ====================================================================
 
         function formatTime(timestamp) {
@@ -1247,7 +1397,6 @@
             return div.innerHTML;
         }
 
-        /** Render a chat message bubble in the stream */
         function renderChatMessage(msg) {
             const stream = document.getElementById('chatMessages');
             const row = document.createElement('div');
@@ -1270,7 +1419,6 @@
             stream.appendChild(row);
             stream.scrollTop = stream.scrollHeight;
 
-            // Handle self-destruct timer if configured
             if (msg.timer > 0) {
                 let remaining = msg.timer;
                 const timerElem = document.getElementById(`timer_${msg.id}`);
@@ -1310,28 +1458,31 @@
         }
 
         // ====================================================================
-        // EMERGENCY BURN ROOM & EPHEMERAL PURGE
+        // EMERGENCY BURN ROOM & CLEANUP
         // ====================================================================
 
-        /** Burn room initiated by local user */
         async function burnRoom() {
             if (confirm("🔥 Burn this session? All keys and messages will be permanently obliterated from memory on both sides.")) {
-                if (AppState.dc && AppState.dc.readyState === 'open') {
+                if (isChannelOpen()) {
                     try {
                         const packet = await encryptPayload(AppState.cryptoKey, { type: 'burn' });
-                        AppState.dc.send(JSON.stringify(packet));
+                        sendP2PRaw(packet);
                     } catch(e) {}
                 }
                 burnRoomLocal('Session destroyed. RAM sanitized.');
             }
         }
 
-        /** Obliterate all memory, close sockets, and restore clean lobby */
-        function burnRoomLocal(reason) {
-            playChime('burn');
-
-            // 1. Close WebRTC DataChannel & PeerConnection
+        function cleanupSignaling() {
             stopLatencyPings();
+            if (AppState.conn) {
+                try { AppState.conn.close(); } catch(e) {}
+                AppState.conn = null;
+            }
+            if (AppState.peer) {
+                try { AppState.peer.destroy(); } catch(e) {}
+                AppState.peer = null;
+            }
             if (AppState.dc) {
                 try { AppState.dc.close(); } catch(e) {}
                 AppState.dc = null;
@@ -1340,22 +1491,22 @@
                 try { AppState.pc.close(); } catch(e) {}
                 AppState.pc = null;
             }
-
-            // 2. Disconnect Signaling WebSocket
             if (AppState.ws) {
                 try { AppState.ws.close(); } catch(e) {}
                 AppState.ws = null;
             }
+        }
 
-            // 3. Zero out keys in memory
+        function burnRoomLocal(reason) {
+            playChime('burn');
+            cleanupSignaling();
+
             AppState.cryptoKey = null;
             AppState.rawKeyB64 = null;
             AppState.roomId = null;
 
-            // 4. Scrub URL hash completely
             history.replaceState(null, '', window.location.pathname);
 
-            // 5. Clear Chat DOM
             document.getElementById('chatMessages').innerHTML = '';
             document.getElementById('inputMessage').value = '';
 
@@ -1368,10 +1519,9 @@
         }
 
         // ====================================================================
-        // QR CODE GENERATOR & CLIPBOARD HELPER
+        // QR CODE & CLIPBOARD UTILITIES
         // ====================================================================
 
-        /** Client-side pure QR code generation onto canvas */
         function renderQrCode(text) {
             const canvas = document.getElementById('qrCanvas');
             const ctx = canvas.getContext('2d');
@@ -1380,7 +1530,6 @@
 
             if (typeof qrcode !== 'undefined') {
                 try {
-                    // Type 0 = auto-detect, 'M' error correction
                     const qr = qrcode(0, 'M');
                     qr.addData(text);
                     qr.make();
@@ -1399,12 +1548,10 @@
                         }
                     }
                     return;
-                } catch(e) {
-                    console.warn("QR generation fallback:", e);
-                }
+                } catch(e) {}
             }
 
-            // Fallback decorative matrix pattern if QR library CDN fails
+            // Fallback decorative canvas
             ctx.fillStyle = '#0f172a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = '#10b981';
@@ -1417,18 +1564,28 @@
             const input = document.getElementById('inputShareLink');
             input.select();
             input.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(input.value).then(() => {
+
+            const performCopy = () => {
                 const btnText = document.getElementById('btnCopyText');
                 btnText.textContent = 'Copied!';
                 showToast('📋 Encrypted link copied to clipboard!');
+                playChime('send');
                 setTimeout(() => { btnText.textContent = 'Copy Link'; }, 2000);
-            }).catch(() => {
-                showToast('Failed to copy. Please copy manually.');
-            });
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value).then(performCopy).catch(() => {
+                    document.execCommand('copy');
+                    performCopy();
+                });
+            } else {
+                document.execCommand('copy');
+                performCopy();
+            }
         }
 
         // ====================================================================
-        // MANUAL AIR-GAPPED SDP HANDSHAKE HELPERS
+        // MANUAL AIR-GAPPED SDP HANDSHAKE
         // ====================================================================
 
         function copyLocalSdp() {
@@ -1443,7 +1600,7 @@
             if (!raw) return;
             try {
                 const sdp = JSON.parse(raw);
-                await handleRemoteSignal({ sdp: sdp });
+                await handleNativeRemoteSignal({ sdp: sdp });
                 toggleModal('modalManualSdp');
                 showToast('Applied remote SDP token');
             } catch (e) {
@@ -1452,7 +1609,7 @@
         }
 
         // ====================================================================
-        // SIGNALING SETTINGS MODAL
+        // MODALS & MICRO-INTERACTIONS
         // ====================================================================
 
         function toggleModal(id) {
@@ -1460,29 +1617,16 @@
             el.classList.toggle('hidden');
         }
 
-        function resetSignalingDefault() {
-            customSignalingUrl = getAutoSignalingUrl();
-            document.getElementById('inputSignalingUrl').value = customSignalingUrl;
-            showToast('Signaling reset to default');
-        }
-
         function saveSignalingSettings() {
-            const val = document.getElementById('inputSignalingUrl').value.trim();
-            if (val) {
-                customSignalingUrl = val;
-                toggleModal('modalSettings');
-                showToast('Signaling URL saved. Reconnecting...');
-                if (AppState.roomId) {
-                    connectSignaling();
-                }
-            }
+            const mode = document.getElementById('selectSignalingMode').value;
+            const customUrl = document.getElementById('inputSignalingUrl').value.trim();
+            if (customUrl) customSignalingUrl = customUrl;
+            AppState.signalingMode = mode;
+            toggleModal('modalSettings');
+            showToast(`Signaling updated: ${mode === 'cloud' ? 'Cloud Serverless' : 'Local Node'}`);
+            if (AppState.roomId) connectSignaling();
         }
 
-        // ====================================================================
-        // UI MICRO-INTERACTIONS & EFFECTS
-        // ====================================================================
-
-        /** Toast alert dispenser */
         function showToast(message) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -1500,7 +1644,6 @@
             }, 3000);
         }
 
-        /** Confetti explosion on channel handshake */
         function showConfetti() {
             if (typeof confetti === 'function') {
                 confetti({
@@ -1512,7 +1655,6 @@
             }
         }
 
-        /** Cute heart burst particles on footer heart click */
         function spawnHeartBurst(e) {
             const btn = e.currentTarget;
             const rect = btn.getBoundingClientRect();
