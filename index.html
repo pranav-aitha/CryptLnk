@@ -807,14 +807,6 @@
         // PROPER URL & HASH PARSER (Resilient RFC 3986)
         // ====================================================================
 
-        function getBaseUrl() {
-            if (window.location.protocol === 'file:') {
-                // If tested from file:///, generate the real shareable GitHub Pages URL
-                return PRODUCTION_URL;
-            }
-            return window.location.origin + window.location.pathname;
-        }
-
         function parseUrlHash() {
             const rawHash = window.location.hash.replace(/^#/, '').trim();
             if (!rawHash) return null;
@@ -884,57 +876,56 @@
                 if (sel) sel.value = 'cloud';
             }
 
-            // Parse incoming URL hash for room joining
-            checkAndHandleIncomingSession();
-        });
-
-        // Listen for external hash changes (e.g. user pastes link into address bar)
-        window.addEventListener('hashchange', () => {
-            const session = parseUrlHash();
-            if (!session || !session.room) {
-                if (AppState.roomId) resetToLobby();
-                return;
-            }
-            // Do not react if we are the initiator hosting this room
-            if (AppState.isInitiator && AppState.roomId === session.room) {
-                return;
-            }
-            checkAndHandleIncomingSession();
-        });
-
-        async function checkAndHandleIncomingSession() {
+            // Only on initial page load: check if arriving via a shared room link
             const session = parseUrlHash();
             if (session && session.room && session.key) {
-                // If we are already the initiator of this room, do not switch to joining screen
-                if (AppState.isInitiator && AppState.roomId === session.room) {
-                    return;
-                }
+                joinExistingSession(session.room, session.key);
+            } else {
+                switchView('lobby');
+            }
+        });
 
-                try {
-                    AppState.roomId = session.room;
-                    AppState.rawKeyB64 = session.key;
-                    AppState.cryptoKey = await importKeyFromBase64(session.key);
-                    AppState.isInitiator = false;
-
-                    // Switch to joining screen
-                    switchView('joining');
-                    const labelRoom = document.getElementById('labelJoiningRoom');
-                    if (labelRoom) labelRoom.textContent = session.room;
-
-                    try {
-                        const fp = await computeFingerprint(AppState.rawKeyB64);
-                        const labelFp = document.getElementById('labelJoiningFingerprint');
-                        if (labelFp) labelFp.textContent = fp;
-                    } catch (e) {}
-
-                    connectSignaling();
-                } catch (err) {
-                    console.error("Failed to load key from URL hash:", err);
-                    showToast('⚠️ Invalid encryption key in URL');
-                    resetToLobby();
-                }
+        // Listen for external hash changes only if not already hosting or in active chat
+        window.addEventListener('hashchange', () => {
+            if (AppState.isInitiator || AppState.conn || AppState.dc) {
+                return;
+            }
+            const session = parseUrlHash();
+            if (session && session.room && session.key) {
+                joinExistingSession(session.room, session.key);
             } else if (!AppState.roomId) {
                 switchView('lobby');
+            }
+        });
+
+        async function joinExistingSession(roomId, rawKeyB64) {
+            // If already hosting this session, never switch to joining screen
+            if (AppState.isInitiator && AppState.roomId === roomId) {
+                return;
+            }
+
+            try {
+                AppState.roomId = roomId;
+                AppState.rawKeyB64 = rawKeyB64;
+                AppState.cryptoKey = await importKeyFromBase64(rawKeyB64);
+                AppState.isInitiator = false;
+
+                // Switch to joining screen
+                switchView('joining');
+                const labelRoom = document.getElementById('labelJoiningRoom');
+                if (labelRoom) labelRoom.textContent = roomId;
+
+                try {
+                    const fp = await computeFingerprint(rawKeyB64);
+                    const labelFp = document.getElementById('labelJoiningFingerprint');
+                    if (labelFp) labelFp.textContent = fp;
+                } catch (e) {}
+
+                connectSignaling();
+            } catch (err) {
+                console.error("Failed to load key from URL hash:", err);
+                showToast('⚠️ Invalid encryption key in URL');
+                resetToLobby();
             }
         }
 
@@ -957,24 +948,16 @@
                     return;
                 }
 
-                // 1. Generate fresh room ID and 256-bit AES-GCM Key
+                // 1. Mark strictly as INITIATOR (HOST)
+                AppState.isInitiator = true;
                 AppState.roomId = generateRoomId();
                 AppState.cryptoKey = await generateCryptoKey();
                 AppState.rawKeyB64 = await exportKeyToBase64(AppState.cryptoKey);
-                AppState.isInitiator = true;
 
                 // 2. Generate full shareable URL
                 const shareUrl = constructShareUrl(AppState.roomId, AppState.rawKeyB64);
 
-                // 3. Update browser address bar cleanly with replaceState (avoids triggering hashchange)
-                try {
-                    history.replaceState({ room: AppState.roomId }, '', shareUrl);
-                } catch (e) {
-                    // Fallback if replaceState is blocked
-                    try { window.location.hash = `room=${encodeURIComponent(AppState.roomId)}&key=${encodeURIComponent(AppState.rawKeyB64)}`; } catch(h) {}
-                }
-
-                // 4. Fill UI link elements
+                // 3. Populate UI elements immediately
                 const inputLink = document.getElementById('inputShareLink');
                 if (inputLink) inputLink.value = shareUrl;
 
@@ -984,9 +967,16 @@
                     directLink.textContent = shareUrl;
                 }
 
-                // 5. Display Waiting View immediately
+                // 4. Force Waiting View immediately!
                 switchView('waiting');
                 showToast('🔑 Cryptographic Link Generated!');
+
+                // 5. Update browser address bar cleanly with replaceState without triggering hashchange
+                try {
+                    history.replaceState({ room: AppState.roomId }, '', shareUrl);
+                } catch (e) {
+                    console.warn("replaceState notice:", e);
+                }
 
                 // 6. Render QR Code defensively
                 try {
