@@ -116,6 +116,8 @@ sequenceDiagram
 
 ## ✨ Key Features & User Experience
 
+- **Customizable Display Names & Cyber Aliases**: Pick or randomize display aliases (e.g. `Quantum_Falcon_42`) before joining or hosting, with encrypted P2P profile synchronization and in-chat renaming.
+- **Client-Side Chat Transcript Export**: Download ephemeral chat records directly from browser RAM in Plain Text (`.txt`), GitHub-flavored Markdown (`.md`), or structured JSON (`.json`), or copy to clipboard with zero server surveillance.
 - **Minimalist Dark Luxury UI**: Clean cyberpunk slate aesthetic engineered with Tailwind CSS. Distraction-free typography and smooth micro-interactions.
 - **Instant QR Code Generator**: Offline, client-side QR matrix generated directly on a `<canvas>` element. Allows smartphones to join the encrypted session with zero network leaks.
 - **Message Delivery Status**: Real-time delivery acknowledgments (`✓ Sent` and `✓✓ Delivered`) transmitted via encrypted P2P control frames.
@@ -204,6 +206,7 @@ CryptLnk rejects bloated single-page application frameworks (such as React, Angu
 | **Node.js `ws` Engine** | v8.18.0 | High-performance, lightweight WebSocket server implementation handling zero-storage ephemeral room handshakes for self-hosted instances. |
 | **Web Audio API** | W3C Standard | Real-time audio waveform synthesis (sine and sawtooth oscillators) providing feedback without external audio file requests. |
 | **HTML5 Canvas 2D API** | W3C Standard | Dynamic client-side matrix rasterization rendering offline scannable QR codes in real-time. |
+| **HTML5 Blob & File API** | W3C File API | Client-side in-memory file synthesis enabling instant, zero-server chat transcript downloads in `.txt`, `.md`, and `.json`. |
 
 ---
 
