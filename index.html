@@ -322,10 +322,16 @@
                         </button>
                     </div>
 
+                    <!-- Direct Clickable URL Link for immediate access -->
+                    <div class="p-2.5 rounded-xl bg-slate-950/60 border border-emerald-500/20 flex flex-col space-y-1">
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase">Clickable Link (Direct Access):</span>
+                        <a id="linkDirectShare" href="#" target="_blank" class="text-xs text-emerald-400 hover:text-emerald-300 font-mono break-all underline"></a>
+                    </div>
+
                     <!-- Instant Test Link Button -->
                     <div class="flex justify-between items-center pt-1 text-[11px]">
                         <span class="text-slate-500">Want to test right now?</span>
-                        <button onclick="openTestPeerTab()" class="text-cyan-400 hover:text-cyan-300 font-semibold underline transition">
+                        <button onclick="openTestPeerTab()" class="text-cyan-400 hover:text-cyan-300 font-semibold underline transition cursor-pointer">
                             Open 2nd Peer Tab (Test Locally) &rarr;
                         </button>
                     </div>
@@ -841,10 +847,22 @@
             return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
+        function getBaseUrl() {
+            if (window.location.protocol === 'file:') {
+                return PRODUCTION_URL;
+            }
+            let url = window.location.origin + window.location.pathname;
+            if (url.endsWith('index.html')) {
+                url = url.substring(0, url.length - 10);
+            }
+            if (!url.endsWith('/')) {
+                url += '/';
+            }
+            return url;
+        }
+
         function constructShareUrl(roomId, keyB64) {
-            const base = getBaseUrl();
-            const cleanBase = base.endsWith('/') ? base : base + '/';
-            return `${cleanBase}#room=${encodeURIComponent(roomId)}&key=${encodeURIComponent(keyB64)}`;
+            return `${getBaseUrl()}#room=${encodeURIComponent(roomId)}&key=${encodeURIComponent(keyB64)}`;
         }
 
         // ====================================================================
@@ -852,29 +870,46 @@
         // ====================================================================
 
         window.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('inputSignalingUrl').value = customSignalingUrl;
+            const inputSig = document.getElementById('inputSignalingUrl');
+            if (inputSig) inputSig.value = customSignalingUrl;
 
             // Automatically detect if running under local node server
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 AppState.signalingMode = 'local';
-                document.getElementById('selectSignalingMode').value = 'local';
+                const sel = document.getElementById('selectSignalingMode');
+                if (sel) sel.value = 'local';
             } else {
                 AppState.signalingMode = 'cloud';
-                document.getElementById('selectSignalingMode').value = 'cloud';
+                const sel = document.getElementById('selectSignalingMode');
+                if (sel) sel.value = 'cloud';
             }
 
             // Parse incoming URL hash for room joining
             checkAndHandleIncomingSession();
         });
 
-        // Listen for hash changes if user pastes a new URL without refreshing
+        // Listen for external hash changes (e.g. user pastes link into address bar)
         window.addEventListener('hashchange', () => {
+            const session = parseUrlHash();
+            if (!session || !session.room) {
+                if (AppState.roomId) resetToLobby();
+                return;
+            }
+            // Do not react if we are the initiator hosting this room
+            if (AppState.isInitiator && AppState.roomId === session.room) {
+                return;
+            }
             checkAndHandleIncomingSession();
         });
 
         async function checkAndHandleIncomingSession() {
             const session = parseUrlHash();
             if (session && session.room && session.key) {
+                // If we are already the initiator of this room, do not switch to joining screen
+                if (AppState.isInitiator && AppState.roomId === session.room) {
+                    return;
+                }
+
                 try {
                     AppState.roomId = session.room;
                     AppState.rawKeyB64 = session.key;
@@ -883,10 +918,14 @@
 
                     // Switch to joining screen
                     switchView('joining');
-                    document.getElementById('labelJoiningRoom').textContent = session.room;
+                    const labelRoom = document.getElementById('labelJoiningRoom');
+                    if (labelRoom) labelRoom.textContent = session.room;
 
-                    const fp = await computeFingerprint(AppState.rawKeyB64);
-                    document.getElementById('labelJoiningFingerprint').textContent = fp;
+                    try {
+                        const fp = await computeFingerprint(AppState.rawKeyB64);
+                        const labelFp = document.getElementById('labelJoiningFingerprint');
+                        if (labelFp) labelFp.textContent = fp;
+                    } catch (e) {}
 
                     connectSignaling();
                 } catch (err) {
@@ -913,27 +952,68 @@
 
         async function generateNewSession() {
             try {
+                if (!window.crypto || !window.crypto.subtle) {
+                    alert("Web Crypto API is required. Please access via HTTPS or localhost.");
+                    return;
+                }
+
+                // 1. Generate fresh room ID and 256-bit AES-GCM Key
                 AppState.roomId = generateRoomId();
                 AppState.cryptoKey = await generateCryptoKey();
                 AppState.rawKeyB64 = await exportKeyToBase64(AppState.cryptoKey);
                 AppState.isInitiator = true;
 
-                // Update browser address bar without reload
-                window.location.hash = `room=${encodeURIComponent(AppState.roomId)}&key=${encodeURIComponent(AppState.rawKeyB64)}`;
-
-                // Generate full shareable URL
+                // 2. Generate full shareable URL
                 const shareUrl = constructShareUrl(AppState.roomId, AppState.rawKeyB64);
-                document.getElementById('inputShareLink').value = shareUrl;
-                renderQrCode(shareUrl);
 
-                const fp = await computeFingerprint(AppState.rawKeyB64);
-                document.getElementById('labelFingerprint').textContent = fp;
+                // 3. Update browser address bar cleanly with replaceState (avoids triggering hashchange)
+                try {
+                    history.replaceState({ room: AppState.roomId }, '', shareUrl);
+                } catch (e) {
+                    // Fallback if replaceState is blocked
+                    try { window.location.hash = `room=${encodeURIComponent(AppState.roomId)}&key=${encodeURIComponent(AppState.rawKeyB64)}`; } catch(h) {}
+                }
 
+                // 4. Fill UI link elements
+                const inputLink = document.getElementById('inputShareLink');
+                if (inputLink) inputLink.value = shareUrl;
+
+                const directLink = document.getElementById('linkDirectShare');
+                if (directLink) {
+                    directLink.href = shareUrl;
+                    directLink.textContent = shareUrl;
+                }
+
+                // 5. Display Waiting View immediately
                 switchView('waiting');
-                connectSignaling();
-                showToast('🔑 Cryptographic Session Link Generated!');
+                showToast('🔑 Cryptographic Link Generated!');
+
+                // 6. Render QR Code defensively
+                try {
+                    renderQrCode(shareUrl);
+                } catch (qrErr) {
+                    console.warn("QR generation notice:", qrErr);
+                }
+
+                // 7. Compute Fingerprint defensively
+                try {
+                    const fp = await computeFingerprint(AppState.rawKeyB64);
+                    const fpLabel = document.getElementById('labelFingerprint');
+                    if (fpLabel) fpLabel.textContent = fp;
+                } catch (fpErr) {
+                    console.warn("Fingerprint notice:", fpErr);
+                }
+
+                // 8. Connect signaling relay
+                try {
+                    connectSignaling();
+                } catch (sigErr) {
+                    console.warn("Signaling initialization notice:", sigErr);
+                }
+
             } catch (err) {
                 console.error("Session generation error:", err);
+                alert("Failed to generate session: " + (err.message || err));
                 showToast('Failed to generate cryptographic key');
             }
         }
@@ -989,10 +1069,15 @@
             if (AppState.isInitiator) {
                 // Room creator hosts the peer ID
                 console.log("[PeerJS] Hosting session ID:", hostPeerId);
-                AppState.peer = new Peer(hostPeerId, {
-                    config: RTC_CONFIG,
-                    debug: 1
-                });
+                try {
+                    AppState.peer = new Peer(hostPeerId, {
+                        config: RTC_CONFIG,
+                        debug: 1
+                    });
+                } catch (e) {
+                    console.warn("PeerJS init failed:", e);
+                    return;
+                }
 
                 AppState.peer.on('open', (id) => {
                     console.log("[PeerJS] Peer open as host:", id);
@@ -1007,9 +1092,7 @@
                 AppState.peer.on('error', (err) => {
                     console.warn("[PeerJS] Host error:", err);
                     if (err.type === 'unavailable-id') {
-                        // ID already in use: regenerate room ID
-                        showToast('Room ID collision. Regenerating key...');
-                        generateNewSession();
+                        console.warn("Host peer ID is already registered or reconnecting.");
                     }
                 });
             } else {
@@ -1017,10 +1100,15 @@
                 const joinerPeerId = `${prefix}${AppState.roomId}-peer-${Math.random().toString(36).substring(2, 7)}`;
                 console.log("[PeerJS] Connecting as joiner:", joinerPeerId, "->", hostPeerId);
                 
-                AppState.peer = new Peer(joinerPeerId, {
-                    config: RTC_CONFIG,
-                    debug: 1
-                });
+                try {
+                    AppState.peer = new Peer(joinerPeerId, {
+                        config: RTC_CONFIG,
+                        debug: 1
+                    });
+                } catch (e) {
+                    console.warn("PeerJS joiner init failed:", e);
+                    return;
+                }
 
                 AppState.peer.on('open', () => {
                     const conn = AppState.peer.connect(hostPeerId, { reliable: true });
